@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rentify — Trust Scorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #c8f04a;
+    --accent2: #4af0a0;
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4a4a;
+    --warning: #f0c84a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 80px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(200,240,74,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,240,74,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,240,74,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 56px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #000;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo-text span {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 6vw, 52px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 16px;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 440px;
+  }
+
+  /* API Key Section */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .api-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .api-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .api-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-input:focus { border-color: var(--accent); }
+  .api-input::placeholder { color: var(--muted); }
+
+  .api-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* Form */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  .form-section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .form-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field-group {
+    margin-bottom: 28px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .field-label strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .field-required {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .field-input, .field-select, .field-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+
+  .field-input:focus,
+  .field-select:focus,
+  .field-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(200,240,74,0.08);
+  }
+
+  .field-input::placeholder,
+  .field-textarea::placeholder { color: #444; }
+
+  .field-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+  .field-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .field-select option { background: #1a1a1a; }
+
+  /* Radio toggle */
+  .toggle-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .toggle-option {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .toggle-option input { display: none; }
+
+  .toggle-option label {
+    display: block;
+    text-align: center;
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+
+  .toggle-option input:checked + label {
+    border-color: var(--accent);
+    background: rgba(200,240,74,0.08);
+    color: var(--accent);
+  }
+
+  .toggle-option label:hover { border-color: #444; color: var(--text); }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(200,240,74,0.25);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .submit-btn .btn-loading {
+    display: none;
+  }
+
+  .submit-btn.loading .btn-text { display: none; }
+  .submit-btn.loading .btn-loading { display: inline; }
+
+  /* Result */
+  .result-card {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-top: 24px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .result-card.visible { display: block; }
+
+  .score-display {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 3px solid;
+    position: relative;
+  }
+
+  .score-circle.high { border-color: var(--accent2); background: rgba(74,240,160,0.08); }
+  .score-circle.medium { border-color: var(--warning); background: rgba(240,200,74,0.08); }
+  .score-circle.low { border-color: var(--danger); background: rgba(255,74,74,0.08); }
+
+  .score-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .score-circle.high .score-number { color: var(--accent2); }
+  .score-circle.medium .score-number { color: var(--warning); }
+  .score-circle.low .score-number { color: var(--danger); }
+
+  .score-label-text {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .score-meta h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .score-meta p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .result-section {
+    margin-bottom: 24px;
+  }
+
+  .result-section-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .result-text {
+    font-size: 13px;
+    line-height: 1.8;
+    color: #ccc;
+    white-space: pre-wrap;
+  }
+
+  .flag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .flag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #bbb;
+  }
+
+  .flag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .flag-dot.green { background: var(--accent2); }
+  .flag-dot.yellow { background: var(--warning); }
+  .flag-dot.red { background: var(--danger); }
+
+  .verdict-bar {
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  .verdict-bar.approve { background: rgba(74,240,160,0.1); border: 1px solid rgba(74,240,160,0.3); color: var(--accent2); }
+  .verdict-bar.review { background: rgba(240,200,74,0.1); border: 1px solid rgba(240,200,74,0.3); color: var(--warning); }
+  .verdict-bar.reject { background: rgba(255,74,74,0.1); border: 1px solid rgba(255,74,74,0.3); color: var(--danger); }
+
+  .reset-btn {
+    margin-top: 24px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .error-msg {
+    background: rgba(255,74,74,0.1);
+    border: 1px solid rgba(255,74,74,0.3);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 16px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .powered {
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    margin-top: 48px;
+    letter-spacing: 1px;
+  }
+
+  .powered span { color: #555; }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark">R</div>
+      <div class="logo-text">Rentify <span>/ Trust Engine</span></div>
+    </div>
+    <h1>Renter <em>Trust</em><br>Scorer</h1>
+    <p class="subtitle">AI-powered trust verification for luxury rentals. Submit a renter profile and get an instant reliability score with risk flags.</p>
+  </div>
+
+  <!-- API Key -->
+  <div class="api-section">
+    <div class="api-label">→ OpenAI API Key</div>
+    <div class="api-row">
+      <input type="password" class="api-input" id="apiKey" placeholder="sk-proj-..." autocomplete="off">
+    </div>
+    <p class="api-note">Your key stays in this browser tab and is never stored or sent anywhere except OpenAI directly.</p>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card">
+    <div class="form-section-label">Renter Profile</div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Full Name</strong>
+        <span class="field-required">required</span>
+      </div>
+      <input type="text" class="field-input" id="name" placeholder="e.g. Arjun Mehta">
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Government ID Type</strong>
+        <span class="field-required">required</span>
+      </div>
+      <select class="field-select" id="idType">
+        <option value="">Select ID type</option>
+        <option value="Aadhaar Card">Aadhaar Card</option>
+        <option value="Passport">Passport</option>
+        <option value="Driving License">Driving License</option>
+        <option value="Voter ID">Voter ID</option>
+        <option value="PAN Card">PAN Card</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>ID Verification Status</strong>
+        <span class="field-required">required</span>
+      </div>
+      <div class="toggle-group">
+        <div class="toggle-option">
+          <input type="radio" name="idVerified" id="id_yes" value="Verified">
+          <label for="id_yes">✓ Verified</label>
+        </div>
+        <div class="toggle-option">
+          <input type="radio" name="idVerified" id="id_pending" value="Pending verification">
+          <label for="id_pending">⏳ Pending</label>
+        </div>
+        <div class="toggle-option">
+          <input type="radio" name="idVerified" id="id_no" value="Not provided">
+          <label for="id_no">✗ Not provided</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Past Rental History</strong>
+        <span class="field-required">required</span>
+      </div>
+      <select class="field-select" id="rentalHistory">
+        <option value="">Select history</option>
+        <option value="5+ successful rentals, no disputes">5+ successful rentals, no disputes</option>
+        <option value="2-4 rentals, minor issues resolved">2–4 rentals, minor issues resolved</option>
+        <option value="1 rental, no issues">1 rental, no issues</option>
+        <option value="First-time renter, no history">First-time renter, no history</option>
+        <option value="Previous dispute on record">Previous dispute on record</option>
+        <option value="Rental terminated early once">Rental terminated early once</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Employment / Income Proof</strong>
+        <span class="field-required">required</span>
+      </div>
+      <select class="field-select" id="employment">
+        <option value="">Select status</option>
+        <option value="Salaried employee, payslip submitted">Salaried — payslip submitted</option>
+        <option value="Self-employed, ITR submitted">Self-employed — ITR submitted</option>
+        <option value="Business owner, GST registered">Business owner — GST registered</option>
+        <option value="Student with guarantor">Student with guarantor</option>
+        <option value="Freelancer, bank statements submitted">Freelancer — bank statements</option>
+        <option value="No income proof provided">No income proof provided</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Item Being Rented</strong>
+      </div>
+      <input type="text" class="field-input" id="item" placeholder="e.g. Lehenga, Sony A7IV camera, luxury watch...">
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Rental Duration</strong>
+      </div>
+      <select class="field-select" id="duration">
+        <option value="">Select duration</option>
+        <option value="1 day">1 day</option>
+        <option value="2-3 days">2–3 days</option>
+        <option value="1 week">1 week</option>
+        <option value="2 weeks">2 weeks</option>
+        <option value="1 month+">1 month+</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">
+        <strong>Additional Context</strong>
+        <span style="font-size:10px;color:#444">optional</span>
+      </div>
+      <textarea class="field-textarea" id="context" placeholder="Any other details — purpose of rental, references, special circumstances..."></textarea>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="scoreRenter()">
+    <span class="btn-text">→ Generate Trust Score</span>
+    <span class="btn-loading">Analyzing profile...</span>
+  </button>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="score-display">
+      <div class="score-circle" id="scoreCircle">
+        <div class="score-number" id="scoreNumber">—</div>
+        <div class="score-label-text">/ 100</div>
+      </div>
+      <div class="score-meta">
+        <h3 id="scoreTier">—</h3>
+        <p id="scoreSummary">—</p>
+      </div>
+    </div>
+
+    <div class="result-section">
+      <div class="result-section-title">→ Analysis</div>
+      <div class="result-text" id="analysisText"></div>
+    </div>
+
+    <div class="result-section">
+      <div class="result-section-title">→ Risk Flags</div>
+      <div class="flag-list" id="flagList"></div>
+    </div>
+
+    <div class="result-section">
+      <div class="result-section-title">→ Verdict</div>
+      <div class="verdict-bar" id="verdictBar"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetForm()">← Score another renter</button>
+  </div>
+
+  <p class="powered">Rentify Trust Engine · <span>Powered by GPT-4o</span></p>
+</div>
+
+<script>
+async function scoreRenter() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) return showError('Please enter your OpenAI API key above.');
+
+  const name = document.getElementById('name').value.trim();
+  const idType = document.getElementById('idType').value;
+  const idVerified = document.querySelector('input[name="idVerified"]:checked')?.value;
+  const rentalHistory = document.getElementById('rentalHistory').value;
+  const employment = document.getElementById('employment').value;
+  const item = document.getElementById('item').value.trim();
+  const duration = document.getElementById('duration').value;
+  const context = document.getElementById('context').value.trim();
+
+  if (!name || !idType || !idVerified || !rentalHistory || !employment) {
+    return showError('Please fill in all required fields before scoring.');
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  document.getElementById('errorMsg').classList.remove('visible');
+  document.getElementById('resultCard').classList.remove('visible');
+
+  const prompt = `You are the Trust Engine for Rentify, a luxury rental platform in India. Analyze this renter profile and return a JSON trust score.
+
+RENTER PROFILE:
+- Name: ${name}
+- Government ID: ${idType} (${idVerified})
+- Rental History: ${rentalHistory}
+- Employment/Income: ${employment}
+- Item to rent: ${item || 'Not specified'}
+- Duration: ${duration || 'Not specified'}
+- Additional context: ${context || 'None'}
+
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{
+  "score": <number 0-100>,
+  "tier": "<Trusted | Moderate Risk | High Risk>",
+  "summary": "<1 sentence summary of this renter>",
+  "analysis": "<2-3 sentences of detailed reasoning>",
+  "flags": [
+    {"level": "<green|yellow|red>", "text": "<flag description>"},
+    {"level": "<green|yellow|red>", "text": "<flag description>"},
+    {"level": "<green|yellow|red>", "text": "<flag description>"}
+  ],
+  "verdict": "<Approve | Approve with Deposit | Manual Review | Decline>",
+  "verdictReason": "<1 sentence explaining verdict>"
+}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 600,
+        temperature: 0.3,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API request failed');
+    }
+
+    const data = await response.json();
+    const raw = data.choices[0].message.content.trim();
+    const parsed = JSON.parse(raw);
+    renderResult(parsed);
+  } catch (err) {
+    showError('Error: ' + err.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function renderResult(data) {
+  const score = data.score;
+  const circle = document.getElementById('scoreCircle');
+  document.getElementById('scoreNumber').textContent = score;
+
+  circle.className = 'score-circle';
+  if (score >= 70) circle.classList.add('high');
+  else if (score >= 40) circle.classList.add('medium');
+  else circle.classList.add('low');
+
+  document.getElementById('scoreTier').textContent = data.tier;
+  document.getElementById('scoreSummary').textContent = data.summary;
+  document.getElementById('analysisText').textContent = data.analysis;
+
+  const flagList = document.getElementById('flagList');
+  flagList.innerHTML = '';
+  (data.flags || []).forEach(flag => {
+    const div = document.createElement('div');
+    div.className = 'flag-item';
+    div.innerHTML = `<div class="flag-dot ${flag.level}"></div><span>${flag.text}</span>`;
+    flagList.appendChild(div);
+  });
+
+  const verdictBar = document.getElementById('verdictBar');
+  const v = data.verdict;
+  verdictBar.className = 'verdict-bar';
+  if (v === 'Approve') verdictBar.classList.add('approve');
+  else if (v === 'Decline') verdictBar.classList.add('reject');
+  else verdictBar.classList.add('review');
+  verdictBar.textContent = `${v} — ${data.verdictReason}`;
+
+  document.getElementById('resultCard').classList.add('visible');
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function resetForm() {
+  document.getElementById('resultCard').classList.remove('visible');
+  document.getElementById('errorMsg').classList.remove('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
